@@ -11,7 +11,7 @@ Mais detalhes no site da disciplina:
 Integrantes:
 
 - Pedro Henrique Britto Aragão Andrade
-- Giancarlo Vanone Ruggiero
+- Giancarlo Vanoni Ruggiero
 
 Nome da marca:
 
