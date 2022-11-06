@@ -10,12 +10,12 @@ Mais detalhes no site da disciplina:
 
 Integrantes:
 
-- Nome 
-- Nome
+- Pedro Henrique Britto Aragão Andrade
+- Giancarlo Vanone Ruggiero
 
 Nome da marca:
 
-- Nome e logo?
+- BikeLog
 
 ## Interface
 
