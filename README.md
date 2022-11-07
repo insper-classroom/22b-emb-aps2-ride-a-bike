@@ -12,6 +12,7 @@ Integrantes:
 
 - Pedro Henrique Britto Aragão Andrade
 - Giancarlo Vanoni Ruggiero
+- Thiago Shiguero Kawahara
 
 Nome da marca:
 
@@ -31,7 +32,6 @@ Nome da marca:
 >    - Apresentar uma foto da interface sendo executada no LCD (imagem estática)
 > - Grava um vídeo explicando a interface
 
-
 Descricão da primeira proposta da interface:
 
 - Imagem da proposta
@@ -40,7 +40,8 @@ Descricão da primeira proposta da interface:
 
 ### Proposta UX 2 - B
 
-> - Especifica e justifica quais vão ser as fontes (e tamanhos) a serem usadas na interface.
+Utilizamos a fonte **Museo Slab** (tamanho 9) por ter traços pequenos (para descrever pequenos detalhes), mas ainda robustos e simplórios, o ideal para uma leitura fácil em movimento.
+
 > - Pega feedback com o Luiz do Fablab e incorpora na interface
 >   - Grava em vídeo a entrevista
 > - Grava um vídeo atualizado explicando o que foi sugerido e o que fizeram para melhorar a interface
@@ -59,7 +60,8 @@ Detalhes da segunda interação da proposta de interface:
 
 ### Proposta UX 3 - A
 
-> - Especifica e justifica as cores a serem usadas na interface
+Utilizamos a **cor de fundo branco** para não só dar um grande contraste com a **escrita em preto**, como também para não chamar muita atenção e distrair o ciclista. Para diferenciar, os **botões estão em azul** para combinar com o logo, e como vão ser usados apenas em segundo plano (quando o ciclista estiver parado), não é necessário um grande contraste. 
+
 > - Pega feedback com mais uma pessoa externa e incorpora na interface
 >     - Grava em vídeo a entrevista
 > - Grava um vídeo atualizado explicando o que foi sugerido e o que fizeram para melhorar a interface
