@@ -86,7 +86,4 @@ Nome da marca:
 >
 >    ### Detalhes da terceira interação da proposta de interface:
 >
-> Como pode-se ser visto no vídeo da entrevista o usuário achou a interface apropriada para a sua aplicação e não sugerio nada para acrestar ou retirar no protótipo.
->
-> ### OBS:
-> Notamos que a escala da tela de configuração estava em centímetros e corrigimos para milímetros.
+> Como pode-se ser visto no vídeo da entrevista o usuário achou a interface apropriada para a sua aplicação e apenas sugerio o acrescimento de uma nova funcionalidade, que seria a velocidade máxima que o ciclista conseguiu atingir, porém decidimos não implementar essa função no momento deixando para uma interação futura.
