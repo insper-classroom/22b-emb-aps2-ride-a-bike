@@ -40,7 +40,7 @@ Nome da marca:
 >    ![Imagem antiga da configuração](img/antigo.jpeg)
 >
 > ### Link do Vídeo explicando a interface
-> 
+> [Primeiro Protótipo](https://www.youtube.com/watch?v=7Dolo3i_ZQY)
 
 ### Proposta UX 2 - B
 
@@ -48,7 +48,7 @@ Nome da marca:
 >
 >   ### Link do aúdio da entrevista com o Luiz do Fablab:
 >
->   https://drive.google.com/file/d/1dwIE1LQ-4tXilP4EJjmqmhTcEnlkvI2K/view?usp=share_link
+>   [Aúdio da Entrevista](https://drive.google.com/file/d/1dwIE1LQ-4tXilP4EJjmqmhTcEnlkvI2K/view?usp=share_link)
 >
 >   ### Prototipo de imagem depois da primeira entrevista
 >   #### Imagem da tela principal
@@ -58,8 +58,9 @@ Nome da marca:
 >   #### Imagem da configuração
 >
 >   ![Imagem nova da configuração](img/nova.jpeg)
-
-> ### Link do vídeo explicando as alterações
+>
+> ### Link do vídeo explicando as alterações>
+> [Segundo Protótipo](https://www.youtube.com/shorts/jJATOpkhMRo)
 >
 > ### Detalhes da segunda interação da proposta de interface:
 >
