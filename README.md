@@ -43,8 +43,8 @@ Nome da marca:
 
 ### Proposta UX 2 - B
 
-Utilizamos a fonte **Museo Slab** (tamanho 9) por ter traços pequenos (para descrever pequenos detalhes), mas ainda robustos e simplórios, o ideal para uma leitura fácil em movimento.
-
+>   Utilizamos a fonte **Museo Slab** (tamanho 9) por ter traços pequenos (para descrever pequenos detalhes), mas ainda robustos e simplórios, o ideal para uma leitura >   fácil em movimento.
+>
 >   ### Link do aúdio da entrevista com o Luiz do Fablab
 >
 >   ### Prototipo de imagem depois da primeira entrevista
