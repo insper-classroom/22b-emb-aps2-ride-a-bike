@@ -82,7 +82,7 @@ Nome da marca:
 > 
 > ### Link do vídeo da segunda entrevista feita
 > 
-> [Vídeo da segunda entrevista](https://www.youtube.com/watch?v=Fx34KORWnbY)
+> [Vídeo da segunda entrevista]([https://www.youtube.com/watch?v=Fx34KORWnbY](https://www.youtube.com/watch?v=tOtFvIDfxkY))
 >
 >    ### Detalhes da terceira interação da proposta de interface:
 >
