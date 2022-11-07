@@ -65,7 +65,7 @@ Nome da marca:
 
 ### Proposta UX 3 - A
 
-> Utilizamos a **cor de fundo branco** para não só dar um grande contraste com a **escrita em preto**, como também para não chamar muita atenção e distrair o ciclista. > Para diferenciar, os **botões estão em azul** para combinar com o logo, e como vão ser usados apenas em segundo plano (quando o ciclista estiver parado), não é >necessário um grande contraste. 
+> Utilizamos a **cor de fundo branco** para não só dar um grande contraste com a **escrita em preto**, como também para não chamar muita atenção e distrair o ciclista. > Para diferenciar, os **botões estão em azul** para combinar com o logo, e como vão ser usados apenas em segundo plano (quando o ciclista estiver parado), não é necessário um grande contraste. 
 >
 > - Pega feedback com mais uma pessoa externa e incorpora na interface
 >     - Grava em vídeo a entrevista
