@@ -86,4 +86,4 @@ Nome da marca:
 >
 >    ### Detalhes da terceira interação da proposta de interface:
 >
-> Como pode-se ser visto no vídeo da entrevista o usuário achou a interface apropriada para a sua aplicação e apenas sugerio o acrescimento de uma nova funcionalidade, que seria a velocidade máxima que o ciclista conseguiu atingir, porém decidimos não implementar essa função no momento deixando para uma interação futura.
+> Como pode-se ser visto no vídeo da entrevista o usuário achou a interface apropriada para a sua aplicação e apenas sugerio o acréscimo de uma nova funcionalidade, que seria a velocidade máxima que o ciclista conseguiu atingir, porém decidimos não implementar essa função no momento deixando para uma interação futura.
