@@ -74,6 +74,22 @@ Detalhes da terceira interação da proposta de interface:
  da interface
 -->
 
-- Imagem da proposta
-- Imagem da proposta no LCD
+### Prototipo de imagem antes da primeira entrevista
+- Imagem da tela principal
+
+![Imagem antiga da tela principal](img/antigoenova.jpeg)
+
+- Imagem da configuração
+
+![Imagem antiga da configuração](img/antigo.jpeg)
+
+### Prototipo de imagem depois da primeira entrevista
+- Imagem da tela principal
+
+![Imagem nova da tela principal](img/antigoenova.jpeg)
+
+- Imagem da configuração
+
+![Imagem nova da configuração](img/nova.jpeg)
+
 - Vídeo 
