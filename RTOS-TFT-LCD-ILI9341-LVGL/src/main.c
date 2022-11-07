@@ -7,6 +7,8 @@
 #include "ili9341.h"
 #include "lvgl.h"
 #include "touch/touch.h"
+#include "tela1.h"
+#include "tela2.h"
 
 /************************************************************************/
 /* LCD / LVGL                                                           */
@@ -93,9 +95,12 @@ void lv_ex_btn_1(void) {
 static void task_lcd(void *pvParameters) {
 	int px, py;
 
-	lv_ex_btn_1();
-
+	lv_obj_t * img = lv_img_create(lv_scr_act());
+	lv_img_set_src(img, &tela2);
+	lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+	
 	for (;;)  {
+
 		lv_tick_inc(50);
 		lv_task_handler();
 		vTaskDelay(50);
