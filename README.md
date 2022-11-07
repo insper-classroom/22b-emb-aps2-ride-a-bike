@@ -28,6 +28,7 @@ Nome da marca:
 >      - Line (lv_line)
 >      - Image (lv_img)
 >      - Text area (lv_textarea)
+>      - Drop-down list (lv_dropdown)
 >      
 >    ### Prototipo de imagem antes da primeira entrevista
 >    #### Imagem da tela principal
