@@ -30,11 +30,11 @@ Nome da marca:
 >      - Text area (lv_textarea)
 >      
 >    ### Prototipo de imagem antes da primeira entrevista
->    - Imagem da tela principal
+>    #### Imagem da tela principal
 >
 >    ![Imagem antiga da tela principal](img/antigoenova.jpeg)
 >
->    - Imagem da configuração
+>    #### Imagem da configuração
 >
 >    ![Imagem antiga da configuração](img/antigo.jpeg)
 >
@@ -48,13 +48,13 @@ Utilizamos a fonte **Museo Slab** (tamanho 9) por ter traços pequenos (para des
 >   ### Link do aúdio da entrevista com o Luiz do Fablab
 >
 >   ### Prototipo de imagem depois da primeira entrevista
->   - Imagem da tela principal
+>   #### Imagem da tela principal
 >
->  ![Imagem nova da tela principal](img/antigoenova.jpeg)
+>   ![Imagem nova da tela principal](img/antigoenova.jpeg)
 >
-> - Imagem da configuração
+>   #### Imagem da configuração
 >
-> ![Imagem nova da configuração](img/nova.jpeg)
+>   ![Imagem nova da configuração](img/nova.jpeg)
 > 
 > ### Link do vídeo explicando as alterações
 >
