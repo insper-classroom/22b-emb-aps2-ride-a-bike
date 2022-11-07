@@ -65,7 +65,7 @@ Nome da marca:
 > ### Detalhes da segunda interação da proposta de interface:
 >
 > Para a tela principal não houve nenhuma alteração recomendada, porém na tela de configuração do aro da roda houve algumas alterações, como por exemplo
-> adicionar uma opção para alterar o tamanho do pneu, além disso por um dropdown ao invés de por um botão que aumente o aro/pneu e adicionar um botão que > o ciclista vai escolher se o valor do tamanho é em polegadas ou em milímetros.
+> adicionar uma opção para alterar o tamanho do pneu, além disso por um dropdown ao invés de por um botão que aumente o aro/pneu e adicionar um botão que o ciclista vai escolher se o valor do tamanho é em polegadas ou em milímetros.
 
 ### Proposta UX 3 - A
 
