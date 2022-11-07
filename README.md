@@ -24,6 +24,10 @@ Nome da marca:
 > - Mockup da interface:
 >    - Satisfaz todos os requisitos do projeto
 >    - Indica quais são os widgets do LVGL 
+>      - Image button (lv_imgbtn)
+>      - Line (lv_line)
+>      - Image (lv_img)
+>      - Text area (lv_textarea)
 >    - Apresentar uma foto da interface sendo executada no LCD (imagem estática)
 > - Grava um vídeo explicando a interface
 
