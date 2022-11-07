@@ -71,16 +71,22 @@ Nome da marca:
 
 > Utilizamos a **cor de fundo branco** para não só dar um grande contraste com a **escrita em preto**, como também para não chamar muita atenção e distrair o ciclista. > Para diferenciar, os **botões estão em azul** para combinar com o logo, e como vão ser usados apenas em segundo plano (quando o ciclista estiver parado), não é necessário um grande contraste. 
 >
-> - Pega feedback com mais uma pessoa externa e incorpora na interface
->     - Grava em vídeo a entrevista
-> - Grava um vídeo atualizado explicando o que foi sugerido e o que fizeram para melhorar a interface
-> - Apresentar uma foto da interface sendo executada no LCD (imagem estática)
+> ### Prototipo de imagem antes da primeira entrevista
+>    #### Imagem da tela principal
 >
-> Detalhes da terceira interação da proposta de interface:
+>    ![Imagem antiga da tela principal](img/antigoenova.jpeg)
 >
-<!-- 
- Adicionar texto descrevendo a evolução 
- da interface
--->
-
-- Vídeo 
+>    #### Imagem da configuração
+>
+>    ![Imagem antiga da configuração](img/nova.jpeg)
+> 
+> ### Link do vídeo da segunda entrevista feita
+> 
+> [Vídeo da segunda entrevista](https://www.youtube.com/watch?v=Fx34KORWnbY)
+>
+>    ### Detalhes da terceira interação da proposta de interface:
+>
+> Como pode-se ser visto no vídeo da entrevista o usuário achou a interface apropriada para a sua aplicação e não sugerio nada para acrestar ou retirar no protótipo.
+>
+> ### OBS:
+> Notamos que a escala da tela de configuração estava em centímetros e corrigimos para milímetros.
