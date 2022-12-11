@@ -11,11 +11,18 @@
 #include "screen1.h"
 #include "screen2.h"
 
+#include "arm_math.h"
+
 LV_FONT_DECLARE(dseg10);
 LV_FONT_DECLARE(dseg20);
 LV_FONT_DECLARE(dseg30);
 LV_FONT_DECLARE(dseg50);
 LV_FONT_DECLARE(dseg70);
+
+#define SENSOR PIOA
+#define SENSOR_ID ID_PIOA
+#define SENSOR_IDX 19
+#define SENSOR_IDX_MASK (1u << SENSOR_IDX)
 
 /************************************************************************/
 /* LCD / LVGL                                                           */
@@ -48,6 +55,8 @@ static lv_indev_drv_t indev_drv;
 SemaphoreHandle_t xSemaphoreTIME;
 SemaphoreHandle_t xSemaphoreTIME2;
 SemaphoreHandle_t xSemaphorePLAY;
+SemaphoreHandle_t xSemaphoreReset;
+SemaphoreHandle_t xSemaphoreSensor;
 
 lv_obj_t * labelTIME;
 lv_obj_t * labelTIME2;
@@ -96,6 +105,7 @@ extern void vApplicationMallocFailedHook(void);
 extern void xPortSysTickHandler(void);
 void RTC_init(Rtc *rtc, uint32_t id_rtc, calendar t, uint32_t irq_type);
 void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
+static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSource);
 
 extern void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed char *pcTaskName) {
 	printf("stack overflow %x %s\r\n", pxTask, (portCHAR *)pcTaskName);
@@ -114,33 +124,60 @@ extern void vApplicationMallocFailedHook(void) {
 /* Funções                                                              */
 /************************************************************************/
 
-void atualiza_velocidade_Instantanea(uint32_t velocidadeInstantanea) {
+void atualiza_velocidade_Instantanea(float velocidadeInstantanea) {
 	char str1[10], str2[10];
-	sprintf(str1, "%d", (velocidadeInstantanea /   10 ) % 10);
-	sprintf(str2, "%d", (velocidadeInstantanea /   1 ) % 10);
+	if(velocidadeInstantanea<10){
+		sprintf(str1, "    %d.", (uint32_t)velocidadeInstantanea);
+	}else{
+		sprintf(str1, "%02d.", (uint32_t)velocidadeInstantanea);
+	}
 	
+	sprintf(str2, "%d", ((uint32_t)(velocidadeInstantanea * 10)) % 10);
 	lv_label_set_text(VELOCIDADEINSTANTANEA1, str1);
 	lv_label_set_text(VELOCIDADEINSTANTANEA2, str2);
 }
 
-void atualiza_velocidade_Media(uint32_t velocidadeMedia) {
+void atualiza_velocidade_Media(float velocidadeMedia) {
 	char str1[10], str2[10];
-	sprintf(str1, "%d", (velocidadeMedia /   10 ) % 10);
-	sprintf(str2, "%d", (velocidadeMedia /   1 ) % 10);
+	if(velocidadeMedia<10){
+		sprintf(str1, "    %d.", (uint32_t)velocidadeMedia);
+	}else{
+		sprintf(str1, "%02d.", (uint32_t)velocidadeMedia);
+	}
+	
+	sprintf(str2, "%d", ((uint32_t)(velocidadeMedia * 10)) % 10);
 	
 	lv_label_set_text(VELOCIDADEMEDIA1, str1);
 	lv_label_set_text(VELOCIDADEMEDIA2, str2);
 }
 
-void atualiza_distancia(uint32_t distancia) {
+void atualiza_distancia(float distancia) {
 	char str1[10], str2[10];
-	sprintf(str1, "%d", (distancia /   10 ) % 10);
-	sprintf(str2, "%d", (distancia /   1 ) % 10);
+	if(distancia<10){
+		sprintf(str1, "    %d.", (uint32_t)distancia);
+	}else{
+		sprintf(str1, "%02d.", (uint32_t)distancia);
+	}
+	
+	sprintf(str2, "%d", ((uint32_t)(distancia * 10)) % 10);
 	
 	lv_label_set_text(DISTANCIA1, str1);
 	lv_label_set_text(DISTANCIA2, str2);
 }
 
+void RTT_Handler(void) {
+	uint32_t ul_status;
+	ul_status = rtt_get_status(RTT);
+
+	/* IRQ due to Alarm */
+	if ((ul_status & RTT_SR_ALMS) == RTT_SR_ALMS) {
+		
+	}
+}
+
+void sensor_callback(void){
+	xSemaphoreGiveFromISR(xSemaphoreSensor, 0);
+}
 
 /************************************************************************/
 /* lvgl                                                                 */
@@ -184,7 +221,7 @@ static void event_config(lv_event_t * e) {
 
 	if(code == LV_EVENT_CLICKED) {
 		LV_LOG_USER("Clicked");
-		printf("Clicked\n");
+		printf("Config 1 Clicked\n");
 		lv_scr_load(tela2);
 	}
 }
@@ -194,7 +231,7 @@ static void event_config2(lv_event_t * e) {
 
 	if(code == LV_EVENT_CLICKED) {
 		LV_LOG_USER("Clicked");
-		printf("Clicked\n");
+		printf("Config 2 Clicked\n");
 		lv_scr_load(tela1);
 	}
 	
@@ -205,7 +242,8 @@ static void event_reset(lv_event_t * e) {
 
 	if(code == LV_EVENT_CLICKED) {
 		LV_LOG_USER("Clicked");
-		printf("Clicked\n");
+		xSemaphoreGiveFromISR(xSemaphoreReset, 0);
+		printf("Reset Clicked\n");
 	}
 	
 }
@@ -215,7 +253,7 @@ static void event_play(lv_event_t * e) {
 
 	if(code == LV_EVENT_CLICKED) {
 		LV_LOG_USER("Clicked");
-		printf("Clicked\n");
+		printf("Play Clicked\n");
 		xSemaphoreGiveFromISR(xSemaphorePLAY, 0);
 	}
 	
@@ -281,15 +319,15 @@ void primeira_tela(void) {
 
 	// VELOCIDADE INSTANTANEA 1
 	VELOCIDADEINSTANTANEA1 = lv_label_create(tela1);
-	lv_obj_align(VELOCIDADEINSTANTANEA1, LV_ALIGN_CENTER, -40, 2);
-	lv_obj_set_style_text_font(VELOCIDADEINSTANTANEA1, &dseg70, LV_STATE_DEFAULT);
+	lv_obj_align(VELOCIDADEINSTANTANEA1, LV_ALIGN_CENTER, -40, 17);
+	lv_obj_set_style_text_font(VELOCIDADEINSTANTANEA1, &dseg50, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(VELOCIDADEINSTANTANEA1, lv_color_black(), LV_STATE_DEFAULT);
-	lv_label_set_text(VELOCIDADEINSTANTANEA1, "0");
-
+	lv_label_set_text(VELOCIDADEINSTANTANEA1, "    0.");
+	
 	// VELOCIDADE INSTANTANEA 2
 	VELOCIDADEINSTANTANEA2 = lv_label_create(tela1);
-	lv_obj_align(VELOCIDADEINSTANTANEA2, LV_ALIGN_CENTER, 4, 13);
-	lv_obj_set_style_text_font(VELOCIDADEINSTANTANEA2, &dseg50, LV_STATE_DEFAULT);
+	lv_obj_align(VELOCIDADEINSTANTANEA2, LV_ALIGN_CENTER, 15, 26);
+	lv_obj_set_style_text_font(VELOCIDADEINSTANTANEA2, &dseg30, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(VELOCIDADEINSTANTANEA2, lv_color_black(), LV_STATE_DEFAULT);
 	lv_label_set_text(VELOCIDADEINSTANTANEA2, "0");
 
@@ -299,15 +337,15 @@ void primeira_tela(void) {
 
 	// VELOCIDADE MEDIA 1
 	VELOCIDADEMEDIA1 = lv_label_create(tela1);
-	lv_obj_align(VELOCIDADEMEDIA1, LV_ALIGN_CENTER, -85, 88);
-	lv_obj_set_style_text_font(VELOCIDADEMEDIA1, &dseg50, LV_STATE_DEFAULT);
+	lv_obj_align(VELOCIDADEMEDIA1, LV_ALIGN_CENTER, -90, 93);
+	lv_obj_set_style_text_font(VELOCIDADEMEDIA1, &dseg30, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(VELOCIDADEMEDIA1, lv_color_black(), LV_STATE_DEFAULT);
-	lv_label_set_text(VELOCIDADEMEDIA1, "0");
+	lv_label_set_text(VELOCIDADEMEDIA1, "    0.");
 
 	// VELOCIDADE MEDIA 2
 	VELOCIDADEMEDIA2 = lv_label_create(tela1);
-	lv_obj_align(VELOCIDADEMEDIA2, LV_ALIGN_CENTER, -55, 97);
-	lv_obj_set_style_text_font(VELOCIDADEMEDIA2, &dseg30, LV_STATE_DEFAULT);
+	lv_obj_align(VELOCIDADEMEDIA2, LV_ALIGN_CENTER, -57, 99);
+	lv_obj_set_style_text_font(VELOCIDADEMEDIA2, &dseg20, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(VELOCIDADEMEDIA2, lv_color_black(), LV_STATE_DEFAULT);
 	lv_label_set_text(VELOCIDADEMEDIA2, "0");
 
@@ -317,15 +355,15 @@ void primeira_tela(void) {
 
 	// Distancia 1
 	DISTANCIA1 = lv_label_create(tela1);
-	lv_obj_align(DISTANCIA1, LV_ALIGN_CENTER, 48, 88);
-	lv_obj_set_style_text_font(DISTANCIA1, &dseg50, LV_STATE_DEFAULT);
+	lv_obj_align(DISTANCIA1, LV_ALIGN_CENTER, 40, 93);
+	lv_obj_set_style_text_font(DISTANCIA1, &dseg30, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(DISTANCIA1, lv_color_black(), LV_STATE_DEFAULT);
-	lv_label_set_text(DISTANCIA1, "0");
+	lv_label_set_text(DISTANCIA1, "    0.");
 
 	// Distancia 2
 	DISTANCIA2 = lv_label_create(tela1);
-	lv_obj_align(DISTANCIA2, LV_ALIGN_CENTER, 78, 97);
-	lv_obj_set_style_text_font(DISTANCIA2, &dseg30, LV_STATE_DEFAULT);
+	lv_obj_align(DISTANCIA2, LV_ALIGN_CENTER, 73, 99);
+	lv_obj_set_style_text_font(DISTANCIA2, &dseg20, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(DISTANCIA2, lv_color_black(), LV_STATE_DEFAULT);
 	lv_label_set_text(DISTANCIA2, "0");
 
@@ -439,8 +477,36 @@ void task_time(void) {
 	tempoAtual.hora = 0;
 	tempoAtual.minuto = 0;
 	tempoAtual.segundo = 0;
-	
+	RTT_init(100, 0, NULL);
+	uint32_t pulsos_rtt = 0; 
+	float dt = 0;
+	float w = 0;
+	float v = 0;
+	float r =  0.508/2;
+	float f = 0;
+	float d = 0;
+	float v_media = 0;
+	float t_total = 0;
 	while (1) {
+		if( xSemaphoreTake(xSemaphoreSensor, 0) ){
+			pulsos_rtt = rtt_read_timer_value(RTT);
+			RTT_init(100, 0, NULL);
+			dt = pulsos_rtt * 0.01;
+			t_total+=dt;
+			d+=2*PI*r;
+			v_media = d*3.6/t_total;
+			atualiza_velocidade_Media(v_media);
+			atualiza_distancia(d/1000);
+			f =1/dt;
+			w = 2*PI*f;
+			v = w*r*3.6;
+			atualiza_velocidade_Instantanea(v);
+			printf("Velocidade média: %.1f\n", v_media);
+			printf("Distancia: %.1f\n", d);
+			printf("Velocidade instantanea: %.1f\n", v);
+		}
+
+		
 		if( xSemaphoreTake(xSemaphoreTIME, 0) ){
 			uint32_t current_hour, current_min, current_sec;
 			uint32_t current_year, current_month, current_day, current_week;
@@ -470,11 +536,23 @@ void task_time(void) {
 			if (tempoAtual.hora == 24) {
 				tempoAtual.hora = 0;
 			}
-
 			lv_label_set_text_fmt(HORAS, "%02d", tempoAtual.hora);
 			lv_label_set_text_fmt(MINUTOS, "%02d", tempoAtual.minuto);
 			printf("HORA: %02d:%02d:%02d\n", tempoAtual.hora, tempoAtual.minuto, tempoAtual.segundo);
       	}
+		if( xSemaphoreTake(xSemaphoreReset, 0) ){
+			tempoAtual.hora = 0;
+			tempoAtual.minuto = 0;
+			tempoAtual.segundo = 0;
+			v_media = 0;
+			d = 0;
+			t_total = 0;
+			atualiza_velocidade_Media(0);
+			atualiza_distancia(0);
+			lv_label_set_text_fmt(HORAS, "%02d", tempoAtual.hora);
+			lv_label_set_text_fmt(MINUTOS, "%02d", tempoAtual.minuto);
+			printf("HORA: %02d:%02d:%02d\n", tempoAtual.hora, tempoAtual.minuto, tempoAtual.segundo);
+		}
 	}
 	
 }
@@ -529,6 +607,47 @@ static void configure_console(void) {
 	setbuf(stdout, NULL);
 }
 
+static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSource) {
+
+	uint16_t pllPreScale = (int) (((float) 32768) / freqPrescale);
+	
+	rtt_sel_source(RTT, false);
+	rtt_init(RTT, pllPreScale);
+	
+	if (rttIRQSource & RTT_MR_ALMIEN) {
+		uint32_t ul_previous_time;
+		ul_previous_time = rtt_read_timer_value(RTT);
+		while (ul_previous_time == rtt_read_timer_value(RTT));
+		rtt_write_alarm_time(RTT, IrqNPulses+ul_previous_time);
+	}
+
+	/* config NVIC */
+	NVIC_DisableIRQ(RTT_IRQn);
+	NVIC_ClearPendingIRQ(RTT_IRQn);
+	NVIC_SetPriority(RTT_IRQn, 4);
+	NVIC_EnableIRQ(RTT_IRQn);
+
+	/* Enable RTT interrupt */
+	if (rttIRQSource & (RTT_MR_RTTINCIEN | RTT_MR_ALMIEN))
+	rtt_enable_interrupt(RTT, rttIRQSource);
+	else
+	rtt_disable_interrupt(RTT, RTT_MR_RTTINCIEN | RTT_MR_ALMIEN);
+	
+}
+
+void io_init(void){
+	pmc_enable_periph_clk(SENSOR_ID);
+	pio_configure(SENSOR, PIO_INPUT, SENSOR_IDX_MASK, NULL);
+	pio_handler_set(SENSOR,
+		SENSOR_ID,
+	    SENSOR_IDX_MASK,
+	    PIO_IT_FALL_EDGE,
+	    sensor_callback);
+	pio_enable_interrupt(SENSOR, SENSOR_IDX_MASK);
+	pio_get_interrupt_status(SENSOR);
+	NVIC_EnableIRQ(SENSOR_ID);
+    NVIC_SetPriority(SENSOR_ID, 4);
+}
 /************************************************************************/
 /* port lvgl                                                            */
 /************************************************************************/
@@ -622,6 +741,7 @@ int main(void) {
 	board_init();
 	sysclk_init();
 	configure_console();
+	io_init();
 
 	/* LCd, touch and lvgl init*/
 	configure_lcd();
@@ -632,6 +752,8 @@ int main(void) {
 	xSemaphoreTIME = xSemaphoreCreateBinary();
 	xSemaphoreTIME2 = xSemaphoreCreateBinary();
 	xSemaphorePLAY = xSemaphoreCreateBinary();
+	xSemaphoreReset = xSemaphoreCreateBinary();
+	xSemaphoreSensor = xSemaphoreCreateBinary();
 
 	/* Create task to control oled */
 	if (xTaskCreate(task_lcd, "LCD", TASK_LCD_STACK_SIZE, NULL, TASK_LCD_STACK_PRIORITY, NULL) != pdPASS) {
@@ -642,7 +764,7 @@ int main(void) {
 		printf("Failed to create time task\r\n");
 	}
 
-	if (xTaskCreate(task_play, "TIME", TASK_TIME_STACK_SIZE, NULL, TASK_PLAY_STACK_PRIORITY, NULL) != pdPASS) {
+	if (xTaskCreate(task_play, "PLAY", TASK_TIME_STACK_SIZE, NULL, TASK_PLAY_STACK_PRIORITY, NULL) != pdPASS) {
 		printf("Failed to create time task\r\n");
 	}
 	
