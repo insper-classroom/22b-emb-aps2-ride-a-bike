@@ -459,19 +459,34 @@ void segunda_tela(void) {
 	lv_obj_center(label_bnt_config);
 
 	/************************
-	/ Botao de Configuracao /
+	/  Botao de Centímetros /
 	************************/
 
 	lv_obj_t * centimetros = lv_btn_create(tela2);
 	lv_obj_add_event_cb(centimetros, event_config2, LV_EVENT_ALL, NULL);
-	lv_obj_align(centimetros, LV_ALIGN_TOP_RIGHT, -100, 36);
+	lv_obj_align(centimetros, LV_ALIGN_TOP_RIGHT, -112, 37);
 	lv_obj_add_style(centimetros, &style2, 0);
-	// lv_obj_set_width(centimetros, 60);
-	lv_obj_set_style_text_font(centimetros, &dseg20, LV_STATE_DEFAULT);
+	lv_obj_set_height(centimetros, 30);
+	lv_obj_set_style_text_font(centimetros, &lv_font_montserrat_16, LV_STATE_DEFAULT);
 	
 	lv_obj_t * label_centimetros = lv_label_create(centimetros);
 	lv_label_set_text(label_centimetros, "Centimetros");
 	lv_obj_center(label_centimetros);
+
+	/************************
+	/  Botao de Polegadas   /
+	************************/
+
+	lv_obj_t * polegadasa = lv_btn_create(tela2);
+	lv_obj_add_event_cb(polegadasa, event_config2, LV_EVENT_ALL, NULL);
+	lv_obj_align(polegadasa, LV_ALIGN_TOP_RIGHT, -70, 37);
+	lv_obj_add_style(polegadasa, &style2, 0);
+	lv_obj_set_height(polegadasa, 30);
+	lv_obj_set_style_text_font(polegadasa, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+	
+	lv_obj_t * label_polegadas = lv_label_create(polegadasa);
+	lv_label_set_text(label_polegadas, "Centimetros");
+	lv_obj_center(label_polegadas);
 
 	/*************************
 	/       Tempo Real       /
@@ -501,10 +516,10 @@ static void task_lcd(void *pvParameters) {
 
 	
 	tela1 = lv_obj_create(NULL);
-	lv_scr_load(tela1);
+	// lv_scr_load(tela1);
 
 	tela2 = lv_obj_create(NULL);
-	//lv_scr_load(tela2);
+	lv_scr_load(tela2);
 
 	primeira_tela();
 	segunda_tela();
