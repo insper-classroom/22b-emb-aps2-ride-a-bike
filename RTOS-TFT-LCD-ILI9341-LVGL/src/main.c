@@ -72,6 +72,7 @@ lv_obj_t * reset;
 lv_obj_t * labelReset;
 lv_obj_t * play;
 lv_obj_t * labelPlay;
+lv_obj_t * aceleration;
 
 static lv_style_t style;
 static lv_style_t style2;
@@ -395,7 +396,7 @@ void primeira_tela(void) {
 	
 	// Label do botão de Play e Pause
 	labelPlay = lv_label_create(play);
-	lv_label_set_text(labelPlay, LV_SYMBOL_PAUSE);
+	lv_label_set_text(labelPlay, LV_SYMBOL_PLAY);
 	lv_obj_center(labelPlay);
 			
 	/*************************
@@ -407,6 +408,17 @@ void primeira_tela(void) {
 	lv_obj_align(labelTIME, LV_ALIGN_BOTTOM_MID, -98, 0);
 	lv_obj_set_style_text_font(labelTIME, &dseg10, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(labelTIME, lv_color_black(), LV_STATE_DEFAULT);
+	
+	/*************************
+	/       Aceleração       /
+	*************************/
+
+	// Label aceleration
+	aceleration = lv_label_create(tela1);
+	lv_label_set_text(aceleration, LV_SYMBOL_MINUS);
+	lv_obj_set_style_text_font(aceleration, &lv_font_montserrat_32, LV_STATE_DEFAULT);
+	lv_obj_align(aceleration, LV_ALIGN_CENTER, 60, 15);
+	
 }
 
 void segunda_tela(void) {
@@ -443,7 +455,7 @@ void segunda_tela(void) {
 	lv_obj_add_style(bnt_config, &style, 0);
 	
 	lv_obj_t * label_bnt_config = lv_label_create(bnt_config);
-	lv_label_set_text(label_bnt_config, LV_SYMBOL_SETTINGS);
+	lv_label_set_text(label_bnt_config, LV_SYMBOL_LEFT);
 	lv_obj_center(label_bnt_config);
 
 	/************************
@@ -489,10 +501,10 @@ static void task_lcd(void *pvParameters) {
 
 	
 	tela1 = lv_obj_create(NULL);
-	// lv_scr_load(tela1);
+	lv_scr_load(tela1);
 
 	tela2 = lv_obj_create(NULL);
-	lv_scr_load(tela2);
+	//lv_scr_load(tela2);
 
 	primeira_tela();
 	segunda_tela();
@@ -524,21 +536,33 @@ void task_time(void) {
 	float d = 0;
 	float v_media = 0;
 	float t_total = 0;
+	float v_ant = 0;
 	while (1) {
+
 		if( xSemaphoreTake(xSemaphoreSensor, 0) ){
 			pulsos_rtt = rtt_read_timer_value(RTT);
 			RTT_init(100, 0, NULL);
 			dt = pulsos_rtt * 0.01;
-			t_total+=dt;
-			d+=2*PI*r;
-			v_media = d*3.6/t_total;
-			atualiza_velocidade_Media(v_media);
-			atualiza_distancia(d/1000);
 			f =1/dt;
 			w = 2*PI*f;
 			v = w*r*3.6;
+			if(v-v_ant>0.0000001){
+				lv_label_set_text(aceleration, LV_SYMBOL_UP);
+			}else if (v_ant-v>0.0000001){
+				lv_label_set_text(aceleration, LV_SYMBOL_DOWN);
+			}else{
+				lv_label_set_text(aceleration, LV_SYMBOL_MINUS);
+			}
+			v_ant =  v;
 			atualiza_velocidade_Instantanea(v);
-			printf("Velocidade média: %.1f\n", v_media);
+			if(PLAYPAUSE){
+				t_total+=dt;
+				d+=2*PI*r;
+				v_media = d*3.6/t_total;
+				atualiza_velocidade_Media(v_media);
+				atualiza_distancia(d/1000);
+			}
+			printf("Velocidade media: %.1f\n", v_media);
 			printf("Distancia: %.1f\n", d);
 			printf("Velocidade instantanea: %.1f\n", v);
 		}
@@ -599,12 +623,12 @@ void task_play(void) {
 		if( xSemaphoreTake(xSemaphorePLAY, 0) ){
 			if (PLAYPAUSE == 0) {
 				PLAYPAUSE = 1;
-				lv_label_set_text(labelPlay, LV_SYMBOL_PLAY);
+				lv_label_set_text(labelPlay, LV_SYMBOL_PAUSE);
 				lv_obj_center(labelPlay);
 				tc_start(TC0, 1);
 			} else {
 				PLAYPAUSE = 0;
-				lv_label_set_text(labelPlay, LV_SYMBOL_PAUSE);
+				lv_label_set_text(labelPlay, LV_SYMBOL_PLAY);
 				lv_obj_center(labelPlay);
 				tc_stop(TC0, 1);
 			}
