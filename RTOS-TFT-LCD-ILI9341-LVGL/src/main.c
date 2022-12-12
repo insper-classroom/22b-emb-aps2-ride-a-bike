@@ -74,6 +74,7 @@ lv_obj_t * play;
 lv_obj_t * labelPlay;
 
 static lv_style_t style;
+static lv_style_t style2;
 
 static lv_obj_t * tela1;
 static lv_obj_t * tela2;
@@ -413,20 +414,56 @@ void segunda_tela(void) {
 	lv_img_set_src(tel, &screen2);
 	lv_obj_align(tel, LV_ALIGN_CENTER, 0, 0);
 	
-	static lv_style_t style;
+	/***********************
+	/  Estilos dos botões  /
+	***********************/
+	
+	// Estilo do botão
+	style;
     lv_style_init(&style);
-    lv_style_set_bg_color(&style, lv_color_white());
-    lv_style_set_text_color(&style, lv_color_black());
+	lv_style_set_bg_color(&style, lv_color_white());
+	lv_style_set_text_color(&style, lv_color_black());
     lv_style_set_border_width(&style, 0);
 
-	lv_obj_t * bnt = lv_btn_create(tela2);
-	lv_obj_add_event_cb(bnt, event_config2, LV_EVENT_ALL, NULL);
-	lv_obj_align(bnt, LV_ALIGN_TOP_RIGHT, -7, 3);
-	lv_obj_add_style(bnt, &style, 0);
+	// Estilo do botão 2
+	style2;
+    lv_style_init(&style2);
+	lv_style_set_bg_color(&style2, lv_palette_main(LV_PALETTE_LIGHT_BLUE));
+	lv_style_set_text_color(&style2, lv_color_black());
+    lv_style_set_border_width(&style2, 0);
+	// lv_obj_set_width(style2, 60);
+
+	/************************
+	/ Botao de Configuracao /
+	************************/
+
+	lv_obj_t * bnt_config = lv_btn_create(tela2);
+	lv_obj_add_event_cb(bnt_config, event_config2, LV_EVENT_ALL, NULL);
+	lv_obj_align(bnt_config, LV_ALIGN_TOP_RIGHT, -7, 3);
+	lv_obj_add_style(bnt_config, &style, 0);
 	
-	lv_obj_t * labelbnt = lv_label_create(bnt);
-	lv_label_set_text(labelbnt, LV_SYMBOL_SETTINGS);
-	lv_obj_center(labelbnt);
+	lv_obj_t * label_bnt_config = lv_label_create(bnt_config);
+	lv_label_set_text(label_bnt_config, LV_SYMBOL_SETTINGS);
+	lv_obj_center(label_bnt_config);
+
+	/************************
+	/ Botao de Configuracao /
+	************************/
+
+	lv_obj_t * centimetros = lv_btn_create(tela2);
+	lv_obj_add_event_cb(centimetros, event_config2, LV_EVENT_ALL, NULL);
+	lv_obj_align(centimetros, LV_ALIGN_TOP_RIGHT, -100, 36);
+	lv_obj_add_style(centimetros, &style2, 0);
+	// lv_obj_set_width(centimetros, 60);
+	lv_obj_set_style_text_font(centimetros, &dseg20, LV_STATE_DEFAULT);
+	
+	lv_obj_t * label_centimetros = lv_label_create(centimetros);
+	lv_label_set_text(label_centimetros, "Centimetros");
+	lv_obj_center(label_centimetros);
+
+	/*************************
+	/       Tempo Real       /
+	*************************/
 
 	// Label Time
 	labelTIME2 = lv_label_create(tela2);
@@ -452,10 +489,10 @@ static void task_lcd(void *pvParameters) {
 
 	
 	tela1 = lv_obj_create(NULL);
-	lv_scr_load(tela1);
+	// lv_scr_load(tela1);
 
 	tela2 = lv_obj_create(NULL);
-	//lv_scr_load(tela2);
+	lv_scr_load(tela2);
 
 	primeira_tela();
 	segunda_tela();
@@ -562,12 +599,13 @@ void task_play(void) {
 		if( xSemaphoreTake(xSemaphorePLAY, 0) ){
 			if (PLAYPAUSE == 0) {
 				PLAYPAUSE = 1;
-				// lv_label_set_text(labelPlay, LV_SYMBOL_PLAY);
+				lv_label_set_text(labelPlay, LV_SYMBOL_PLAY);
+				lv_obj_center(labelPlay);
 				tc_start(TC0, 1);
 			} else {
 				PLAYPAUSE = 0;
-				labelPlay = lv_label_create(play);
-				// lv_label_set_text(labelPlay, LV_SYMBOL_PAUSE);
+				lv_label_set_text(labelPlay, LV_SYMBOL_PAUSE);
+				lv_obj_center(labelPlay);
 				tc_stop(TC0, 1);
 			}
       	}
