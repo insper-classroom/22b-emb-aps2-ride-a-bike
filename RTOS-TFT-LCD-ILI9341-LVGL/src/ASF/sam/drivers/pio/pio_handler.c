@@ -42,7 +42,7 @@
  * constant can be increased, but the current value is the smallest possible one
  * that will be compatible with all existing projects.
  */
-#define MAX_INTERRUPT_SOURCES       7
+#define MAX_INTERRUPT_SOURCES       15
 
 /**
  * Describes a PIO interrupt source, including the PIO instance triggering the

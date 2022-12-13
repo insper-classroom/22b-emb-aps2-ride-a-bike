@@ -13,6 +13,10 @@
 
 #include "arm_math.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 LV_FONT_DECLARE(dseg10);
 LV_FONT_DECLARE(dseg20);
 LV_FONT_DECLARE(dseg30);
@@ -23,6 +27,11 @@ LV_FONT_DECLARE(dseg70);
 #define SENSOR_ID ID_PIOA
 #define SENSOR_IDX 19
 #define SENSOR_IDX_MASK (1u << SENSOR_IDX)
+
+#define LANTERNA PIOD
+#define LANTERNA_ID ID_PIOD
+#define LANTERNA_IDX 25
+#define LANTERNA_IDX_MASK (1u << LANTERNA_IDX)
 
 /************************************************************************/
 /* LCD / LVGL                                                           */
@@ -52,15 +61,16 @@ static lv_indev_drv_t indev_drv;
 #define TASK_PLAY_STACK_SIZE                (1024*6/sizeof(portSTACK_TYPE))
 #define TASK_PLAY_STACK_PRIORITY            (tskIDLE_PRIORITY)
 
-#define TASK_UNIDADE_STACK_SIZE                (1024*6/sizeof(portSTACK_TYPE))
-#define TASK_UNIDADE_STACK_PRIORITY            (tskIDLE_PRIORITY)
-
 SemaphoreHandle_t xSemaphoreTIME;
 SemaphoreHandle_t xSemaphoreTIME2;
 SemaphoreHandle_t xSemaphorePLAY;
 SemaphoreHandle_t xSemaphoreReset;
 SemaphoreHandle_t xSemaphoreSensor;
-SemaphoreHandle_t xSemaphoreUNIDADE;
+SemaphoreHandle_t xSemaphoreCentimetros;
+SemaphoreHandle_t xSemaphorePolegadas;
+
+QueueHandle_t xQueueAro;
+QueueHandle_t xQueuePneu;
 
 lv_obj_t * labelTIME;
 lv_obj_t * labelTIME2;
@@ -75,6 +85,8 @@ lv_obj_t * DISTANCIA2;
 lv_obj_t * reset;
 lv_obj_t * labelReset;
 lv_obj_t * play;
+lv_obj_t * labelLanterna;
+lv_obj_t * lanterna;
 lv_obj_t * labelPlay;
 lv_obj_t * aceleration;
 lv_obj_t * label_centimetros;
@@ -83,6 +95,7 @@ lv_obj_t * aro;
 lv_obj_t * pneu;
 
 static lv_style_t style;
+static lv_style_t style2;
 static lv_style_t style_centimetros;
 static lv_style_t style_polegadas;
 
@@ -90,7 +103,6 @@ static lv_obj_t * tela1;
 static lv_obj_t * tela2;
 
 volatile char PLAYPAUSE = 0;
-volatile char unidades = 0;
 
 typedef struct  {
   uint32_t year;
@@ -228,6 +240,45 @@ void RTC_Handler(void) {
     rtc_clear_status(RTC, RTC_SCCR_TDERRCLR);
 }
 
+static void event_aro(lv_event_t * e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+	if(code == LV_EVENT_VALUE_CHANGED) {
+		char buf[32];
+		lv_dropdown_get_selected_str(aro, buf, sizeof(buf));
+		int diametro = atoi(buf);
+		xQueueSendFromISR(xQueueAro, &diametro, 0);
+		printf("Option: %s\n", buf);
+	}
+}
+
+static void event_pneu( lv_event_t * e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+	if(code == LV_EVENT_VALUE_CHANGED) {
+		char buf[32];
+		lv_dropdown_get_selected_str(pneu, buf, sizeof(buf));
+		int diametro = atoi(buf);
+		xQueueSendFromISR(xQueuePneu, &diametro, 0);
+		printf("Option: %s\n", buf);
+	}
+}
+
+static void event_centimetro(lv_event_t * e){
+	lv_event_code_t code = lv_event_get_code(e);
+	if(code == LV_EVENT_CLICKED) {
+
+		printf("Centimetro\n");
+		
+	}
+}
+
+static void event_polegada(lv_event_t * e){
+	lv_event_code_t code = lv_event_get_code(e);
+		if(code == LV_EVENT_CLICKED) {
+			printf("Polegada\n");
+		}
+}
 static void event_config(lv_event_t * e) {
 	lv_event_code_t code = lv_event_get_code(e);
 
@@ -235,6 +286,22 @@ static void event_config(lv_event_t * e) {
 		LV_LOG_USER("Clicked");
 		printf("Config 1 Clicked\n");
 		lv_scr_load(tela2);
+	}
+}
+
+static void event_lanterna(lv_event_t * e) {
+	lv_event_code_t code = lv_event_get_code(e);
+
+	if(code == LV_EVENT_CLICKED) {
+		if(pio_get(LANTERNA, PIO_INPUT, LANTERNA_IDX_MASK)){
+			pio_clear(LANTERNA,LANTERNA_IDX_MASK);
+			lv_label_set_text(labelLanterna, LV_SYMBOL_VOLUME_MAX);
+			printf("Ligando\n");
+		}else{
+			pio_set(LANTERNA,LANTERNA_IDX_MASK);
+			lv_label_set_text(labelLanterna, LV_SYMBOL_MUTE);
+			printf("Desligando\n");
+		}
 	}
 }
 
@@ -269,53 +336,6 @@ static void event_play(lv_event_t * e) {
 		xSemaphoreGiveFromISR(xSemaphorePLAY, 0);
 	}
 	
-}
-
-static void event_centimetro(lv_event_t * e) {
-	lv_event_code_t code = lv_event_get_code(e);
-
-	if(code == LV_EVENT_CLICKED) {
-		LV_LOG_USER("Clicked");
-		unidades = 0;
-		xSemaphoreGiveFromISR(xSemaphoreUNIDADE, 0);
-	}
-	else if(code == LV_EVENT_VALUE_CHANGED) {
-		LV_LOG_USER("Toggled");
-	}
-}
-
-static void event_polegada(lv_event_t * e) {
-	lv_event_code_t code = lv_event_get_code(e);
-
-	if(code == LV_EVENT_CLICKED) {
-		LV_LOG_USER("Clicked");
-		unidades = 1;
-		xSemaphoreGiveFromISR(xSemaphoreUNIDADE, 0);
-	}
-	else if(code == LV_EVENT_VALUE_CHANGED) {
-		LV_LOG_USER("Toggled");
-	}
-}
-
-static void event_drop_aro(lv_event_t * e) {
-	lv_event_code_t code = lv_event_get_code(e);
-
-	if(code == LV_EVENT_CLICKED) {
-		LV_LOG_USER("Clicked");
-		unidades = 1;
-		xSemaphoreGiveFromISR(xSemaphoreUNIDADE, 0);
-	}
-	else if(code == LV_EVENT_VALUE_CHANGED) {
-		LV_LOG_USER("Toggled");
-		// get 
-		// lv_dropdown_get_text
-		// lv_dropdown_get_selected_str(e);
-		// lv_obj_t * drop_list = lv_event_get_target(e);
-		// lv_obj_t * label = lv_obj_get_child_back(drop_list, NULL);
-		// const char * txt = lv_label_get_text(drop_list);
-		printf("Selected: %d\n", lv_dropdown_get_text(e));
-		printf("Toggled");
-	}
 }
 
 void primeira_tela(void) {
@@ -455,6 +475,21 @@ void primeira_tela(void) {
 	labelPlay = lv_label_create(play);
 	lv_label_set_text(labelPlay, LV_SYMBOL_PLAY);
 	lv_obj_center(labelPlay);
+	
+	/*************************
+	/      Lanterna          /
+	*************************/
+	
+	// Botão da lanterna
+	lanterna = lv_btn_create(tela1);
+	lv_obj_add_event_cb(lanterna, event_lanterna, LV_EVENT_ALL, NULL);
+	lv_obj_align(lanterna, LV_ALIGN_BOTTOM_MID, 0, -12);
+	lv_obj_add_style(lanterna, &style, 0);
+	
+	// Label da lanterna
+	labelLanterna = lv_label_create(lanterna);
+	lv_label_set_text(labelLanterna, LV_SYMBOL_MUTE);
+	lv_obj_center(labelLanterna);
 			
 	/*************************
 	/       Tempo Real       /
@@ -493,23 +528,18 @@ void segunda_tela(void) {
 	lv_style_set_bg_color(&style, lv_color_white());
 	lv_style_set_text_color(&style, lv_color_black());
     lv_style_set_border_width(&style, 0);
-
-	// Estilo do bot�o centímetros
-	style_centimetros;
-    lv_style_init(&style_centimetros);
-	lv_style_set_text_color(&style_centimetros, lv_color_black());
-	lv_style_set_bg_color(&style_centimetros, lv_palette_main(LV_PALETTE_LIGHT_BLUE));
-    lv_style_set_border_width(&style_centimetros, 2);
-	lv_style_set_radius(&style_centimetros, 0);
 	
-	// Estilo do bot�o polegadas
-	style_polegadas;
-    lv_style_init(&style_polegadas);
-	lv_style_set_text_color(&style_polegadas, lv_color_black());
-	lv_style_set_bg_color(&style_polegadas, lv_color_white());
-    lv_style_set_border_width(&style_polegadas, 2);
-	lv_style_set_radius(&style_polegadas, 0);
+	lv_style_init(&style_centimetros);
+	lv_style_set_text_color(&style_centimetros, lv_color_black());
+	lv_style_set_bg_color(&style_centimetros,lv_color_white());
+	lv_style_set_border_width(&style_centimetros, 2);
+	lv_style_set_radius(&style_centimetros, 0);
 
+	 lv_style_init(&style_polegadas);
+	 lv_style_set_text_color(&style_polegadas, lv_color_black());
+	 lv_style_set_bg_color(&style_polegadas, lv_color_white());
+	 lv_style_set_border_width(&style_polegadas, 2);
+	 lv_style_set_radius(&style_polegadas, 0);
 	/************************
 	/ Botao de Configuracao /
 	************************/
@@ -522,22 +552,21 @@ void segunda_tela(void) {
 	lv_obj_t * label_bnt_config = lv_label_create(bnt_config);
 	lv_label_set_text(label_bnt_config, LV_SYMBOL_LEFT);
 	lv_obj_center(label_bnt_config);
-
+	
 	/************************
-	/  Botao de Centímetros /
+	/  Botao de Centimetros   /
 	************************/
-
 	lv_obj_t * centimetros = lv_btn_create(tela2);
 	lv_obj_add_event_cb(centimetros, event_centimetro, LV_EVENT_ALL, NULL);
 	lv_obj_align(centimetros, LV_ALIGN_TOP_RIGHT, -112, 37);
 	lv_obj_add_style(centimetros, &style_centimetros, 0);
 	lv_obj_set_height(centimetros, 30);
-	lv_obj_set_style_text_font(centimetros, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(centimetros, &lv_font_montserrat_18, LV_STATE_DEFAULT);
 	
 	label_centimetros = lv_label_create(centimetros);
 	lv_label_set_text(label_centimetros, "Centimetros");
 	lv_obj_center(label_centimetros);
-
+	
 	/************************
 	/  Botao de Polegadas   /
 	************************/
@@ -548,64 +577,47 @@ void segunda_tela(void) {
 	lv_obj_add_style(polegadas, &style_polegadas, 0);
 	lv_obj_set_height(polegadas, 30);
 	lv_obj_set_width(polegadas, 100);
-	lv_obj_set_style_text_font(polegadas, &lv_font_montserrat_16, LV_STATE_DEFAULT); 
+	lv_obj_set_style_text_font(polegadas, &lv_font_montserrat_18, LV_STATE_DEFAULT); 
 	
 	label_polegadas = lv_label_create(polegadas);
 	lv_label_set_text(label_polegadas, "Polegadas");
 	lv_obj_center(label_polegadas);
-
+	
 	/************************
 	/       Dropdown        /
 	************************/
 	
 	// Dropdown do Aro
 	aro = lv_dropdown_create(tela2);
-	lv_dropdown_add_option(aro, "1", 0);
-	lv_dropdown_add_option(aro, "2", 1);
-	lv_dropdown_add_option(aro, "3", 2);
-	lv_dropdown_add_option(aro, "4", 3);
-	lv_dropdown_add_option(aro, "5", 4);
-	lv_dropdown_add_option(aro, "6", 5);
-	lv_dropdown_add_option(aro, "7", 6);
-	lv_dropdown_add_option(aro, "8", 7);
-	lv_dropdown_add_option(aro, "9", 8);
-	lv_dropdown_add_option(aro, "10", 9);
-	lv_dropdown_add_option(aro, "11", 10);
-	lv_dropdown_add_option(aro, "12", 11);
-	lv_dropdown_add_option(aro, "13", 12);
-	lv_dropdown_add_option(aro, "14", 13);
+    lv_dropdown_set_options(aro, "16\n"
+    "18\n"
+    "20\n"
+    "22\n"
+    "24"
+	);
 	lv_obj_align(aro, LV_ALIGN_CENTER, 55, -22);
 	lv_obj_set_width(aro, 100);
 	lv_obj_set_height(aro, 30);
-	lv_obj_set_style_text_font(aro, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(aro, &lv_font_montserrat_18, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(aro, lv_color_black(), LV_STATE_DEFAULT);
 	lv_obj_set_style_bg_color(aro, lv_color_white(), LV_STATE_DEFAULT);
-	lv_obj_add_event_cb(aro, event_drop_aro, LV_EVENT_ALL, NULL);	
-
+	lv_obj_add_event_cb(aro, event_aro, LV_EVENT_ALL, NULL);	
+	
 	// Dropdown do Pneu
 	pneu = lv_dropdown_create(tela2);
-	lv_dropdown_add_option(pneu, "1", 0);
-	lv_dropdown_add_option(pneu, "2", 1);
-	lv_dropdown_add_option(pneu, "3", 2);
-	lv_dropdown_add_option(pneu, "4", 3);
-	lv_dropdown_add_option(pneu, "5", 4);
-	lv_dropdown_add_option(pneu, "6", 5);
-	lv_dropdown_add_option(pneu, "7", 6);
-	lv_dropdown_add_option(pneu, "8", 7);
-	lv_dropdown_add_option(pneu, "9", 8);
-	lv_dropdown_add_option(pneu, "10", 9);
-	lv_dropdown_add_option(pneu, "11", 10);
-	lv_dropdown_add_option(pneu, "12", 11);
-	lv_dropdown_add_option(pneu, "13", 12);
-	lv_dropdown_add_option(pneu, "14", 13);
+    lv_dropdown_set_options(pneu, "2\n"
+    "4\n"
+    "6\n"
+    "8\n"
+    "10"
+    );
 	lv_obj_align(pneu, LV_ALIGN_CENTER, 55, 92);
 	lv_obj_set_width(pneu, 100);
 	lv_obj_set_height(pneu, 30);
-	lv_obj_set_style_text_font(pneu, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(pneu, &lv_font_montserrat_18, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(pneu, lv_color_black(), LV_STATE_DEFAULT);
 	lv_obj_set_style_bg_color(pneu, lv_color_white(), LV_STATE_DEFAULT);
-	lv_obj_add_event_cb(pneu, event_drop_aro, LV_EVENT_ALL, NULL);
-
+	lv_obj_add_event_cb(pneu, event_pneu, LV_EVENT_ALL, NULL);
 	/*************************
 	/       Tempo Real       /
 	*************************/
@@ -621,21 +633,6 @@ void segunda_tela(void) {
 /* TASKS                                                                */
 /************************************************************************/
 
-static void task_unidade(void *pvParameters) {
-
-	for (;;)  {
-		if( xSemaphoreTake(xSemaphoreUNIDADE, 0) ){
-			if (unidades){
-				lv_style_set_bg_color(&style_centimetros, lv_color_white());
-				lv_style_set_bg_color(&style_polegadas, lv_palette_main(LV_PALETTE_LIGHT_BLUE));
-			} else {
-				lv_style_set_bg_color(&style_polegadas, lv_palette_main(LV_PALETTE_LIGHT_BLUE));
-				lv_style_set_bg_color(&style_centimetros, lv_color_white());
-			}
-      	}
-	}
-}
-
 static void task_lcd(void *pvParameters) {
 	int px, py;
 	
@@ -649,10 +646,10 @@ static void task_lcd(void *pvParameters) {
 
 	
 	tela1 = lv_obj_create(NULL);
-	// lv_scr_load(tela1);
+	lv_scr_load(tela1);
 
 	tela2 = lv_obj_create(NULL);
-	lv_scr_load(tela2);
+	//lv_scr_load(tela2);
 
 	primeira_tela();
 	segunda_tela();
@@ -679,20 +676,48 @@ void task_time(void) {
 	float dt = 0;
 	float w = 0;
 	float v = 0;
+	float d_roda = 16*0.0254;
+	float pneu = 2*0.0254;
 	float r =  0.508/2;
 	float f = 0;
 	float d = 0;
 	float v_media = 0;
 	float t_total = 0;
 	float v_ant = 0;
+	char polegada = 1;
+	uint16_t aro_recebido = 0;
+	uint16_t pneu_recebido = 0;
 	while (1) {
-
+		if(xQueueReceive( xQueueAro, &aro_recebido,0)){
+			if(polegada){
+				d_roda = aro_recebido*0.0254;
+			}
+			else{
+				d_roda = aro_recebido/100.0;
+			}
+			
+		}
+		if(xQueueReceive( xQueuePneu, &pneu_recebido,0)){
+			if(polegada){
+				pneu = pneu_recebido*0.0254;
+			}
+			else{
+				pneu = pneu/100.0;
+			}
+		}
+		if( xSemaphoreTake(xSemaphorePolegadas, 0) ){
+			polegada = 1;
+		}
+		if( xSemaphoreTake(xSemaphoreCentimetros, 0) ){
+			polegada = 0;
+		}
 		if( xSemaphoreTake(xSemaphoreSensor, 0) ){
 			pulsos_rtt = rtt_read_timer_value(RTT);
 			RTT_init(100, 0, NULL);
 			dt = pulsos_rtt * 0.01;
 			f =1/dt;
 			w = 2*PI*f;
+			r = d_roda/2.0+pneu;
 			v = w*r*3.6;
 			if(v-v_ant>0.0000001){
 				lv_label_set_text(aceleration, LV_SYMBOL_UP);
@@ -857,6 +882,9 @@ void io_init(void){
 	pio_get_interrupt_status(SENSOR);
 	NVIC_EnableIRQ(SENSOR_ID);
     NVIC_SetPriority(SENSOR_ID, 4);
+	
+	pmc_enable_periph_clk(LANTERNA_ID);
+	pio_configure(LANTERNA, PIO_OUTPUT_1, LANTERNA_IDX_MASK, PIO_DEFAULT);
 }
 /************************************************************************/
 /* port lvgl                                                            */
@@ -964,8 +992,12 @@ int main(void) {
 	xSemaphorePLAY = xSemaphoreCreateBinary();
 	xSemaphoreReset = xSemaphoreCreateBinary();
 	xSemaphoreSensor = xSemaphoreCreateBinary();
-	xSemaphoreUNIDADE = xSemaphoreCreateBinary();
-
+	xSemaphorePolegadas = xSemaphoreCreateBinary();
+	xSemaphoreCentimetros = xSemaphoreCreateBinary();
+	
+	xQueueAro = xQueueCreate(32, sizeof(uint16_t) );
+	xQueuePneu = xQueueCreate(32, sizeof(uint16_t) );
+	
 	/* Create task to control oled */
 	if (xTaskCreate(task_lcd, "LCD", TASK_LCD_STACK_SIZE, NULL, TASK_LCD_STACK_PRIORITY, NULL) != pdPASS) {
 		printf("Failed to create lcd task\r\n");
@@ -977,10 +1009,6 @@ int main(void) {
 
 	if (xTaskCreate(task_play, "PLAY", TASK_TIME_STACK_SIZE, NULL, TASK_PLAY_STACK_PRIORITY, NULL) != pdPASS) {
 		printf("Failed to create time task\r\n");
-	}
-
-	if (xTaskCreate(task_unidade, "LCD", TASK_UNIDADE_STACK_SIZE, NULL, TASK_UNIDADE_STACK_PRIORITY, NULL) != pdPASS) {
-		printf("Failed to create lcd task\r\n");
 	}
 	
 	/* Start the scheduler. */
